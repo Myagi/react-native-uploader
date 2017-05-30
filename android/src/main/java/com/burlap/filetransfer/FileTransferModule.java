@@ -37,135 +37,152 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import okhttp3.Call;
+
 
 import com.zhy.http.okhttp.request.CountingRequestBody;
 
 public class FileTransferModule extends ReactContextBaseJavaModule {
 
-  private final OkHttpClient client = new OkHttpClient();
-  private String TAG = "ImageUploadAndroid";
-  ReactApplicationContext reactContext = null;
+private final OkHttpClient client = new OkHttpClient();
+private String TAG = "ImageUploadAndroid";
+ReactApplicationContext reactContext = null;
 
-  public FileTransferModule(ReactApplicationContext reactContext) {
-    super(reactContext);
-    this.reactContext = reactContext;
-  }
+public FileTransferModule(ReactApplicationContext reactContext) {
+        super(reactContext);
+        this.reactContext = reactContext;
+}
 
-  @Override
-  public String getName() {
-    // match up with the IOS name
-    return "FileTransfer";
-  }
+@Override
+public String getName() {
+        // match up with the IOS name
+        return "FileTransfer";
+}
 
-  @ReactMethod
-  public void upload(ReadableMap options, Callback complete) {
+@ReactMethod
+public void upload(ReadableMap options, Callback complete) {
 
-    final Callback completeCallback = complete;
+        final Callback completeCallback = complete;
 
-    try {
-      MultipartBody.Builder mRequestBody = new MultipartBody.Builder()
-              .setType(MultipartBody.FORM);
+        try {
+                MultipartBody.Builder mRequestBody = new MultipartBody.Builder()
+                                                     .setType(MultipartBody.FORM);
 
-      ReadableArray files = options.getArray("files");
-      String url = options.getString("url");
+                ReadableArray files = options.getArray("files");
+                String url = options.getString("url");
 
-      if(options.hasKey("params")){
-        ReadableMap data = options.getMap("params");
-        ReadableMapKeySetIterator iterator = data.keySetIterator();
+                if(options.hasKey("params")) {
+                        ReadableMap data = options.getMap("params");
+                        ReadableMapKeySetIterator iterator = data.keySetIterator();
 
-        while(iterator.hasNextKey()){
-          String key = iterator.nextKey();
-          if(ReadableType.String.equals(data.getType(key))) {
-            mRequestBody.addFormDataPart(key, data.getString(key));
-          }
+                        while(iterator.hasNextKey()) {
+                                String key = iterator.nextKey();
+                                if(ReadableType.String.equals(data.getType(key))) {
+                                        mRequestBody.addFormDataPart(key, data.getString(key));
+                                }
+                        }
+                }
+
+
+
+
+                if(files.size() != 0) {
+                        for(int fileIndex=0; fileIndex<files.size(); fileIndex++) {
+                                ReadableMap file = files.getMap(fileIndex);
+                                String uri = file.getString("filepath");
+
+                                Uri file_uri;
+                                if(uri.substring(0,10).equals("content://") ) {
+                                        file_uri = Uri.parse(convertMediaUriToPath(Uri.parse(uri)));
+                                }
+                                else{
+                                        file_uri = Uri.parse(uri);
+                                }
+
+                                File imageFile = new File(file_uri.getPath());
+
+                                if(imageFile == null) {
+                                        Log.d(TAG, "FILE NOT FOUND");
+                                        completeCallback.invoke("FILE NOT FOUND", null);
+                                        return;
+                                }
+
+                                String mimeType = "image/png";
+                                if(file.hasKey("filetype")) {
+                                        mimeType = file.getString("filetype");
+                                }
+                                MediaType mediaType = MediaType.parse(mimeType);
+                                String fileName = file.getString("filename");
+                                String name = fileName;
+                                if(file.hasKey("name")) {
+                                        name = file.getString("name");
+                                }
+
+
+                                mRequestBody.addFormDataPart(name, fileName, RequestBody.create(mediaType, imageFile));
+                        }
+                }
+
+
+
+                MultipartBody requestBody = mRequestBody.build();
+
+                CountingRequestBody monitoredRequest = new CountingRequestBody(requestBody, new CountingRequestBody.Listener() {
+
+                                int progressCount = 0;
+
+                                @Override
+                                public void onRequestProgress(long bytesWritten, long contentLength) {
+                                        WritableMap params = Arguments.createMap();
+                                        params.putDouble("progress",100f * bytesWritten / contentLength);
+                                        params.putDouble("totalBytesWritten", bytesWritten);
+                                        params.putDouble("totalBytesExpectedToWrite", contentLength);
+
+                                        // Only emit periodically. Otherwise UI thread gets blocked.
+                                        if (progressCount % 100 == 0) {
+                                                reactContext
+                                                .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
+                                                .emit("RNUploaderProgress", params);
+                                        }
+
+                                        progressCount += 1;
+                                }
+                        });
+
+                Request request = new Request.Builder()
+                                  .header("Accept", "application/json")
+                                  .url(url)
+                                  .post(monitoredRequest)
+                                  .build();
+
+                client.newCall(request).enqueue(new okhttp3.Callback() {
+                                @Override public void onFailure(Call call, IOException e) {
+                                        e.printStackTrace();
+
+                                }
+
+                                @Override public void onResponse(Call call, Response response) throws IOException {
+                                        if (!response.isSuccessful()) {
+                                                Log.d(TAG, "Unexpected code" + response);
+                                                completeCallback.invoke(response, null);
+                                                return;
+                                        }
+                                        completeCallback.invoke(null, response.body().string());
+                                }
+                        });
+        } catch(Exception e) {
+                Log.d(TAG, e.toString());
         }
-      }
+}
 
-
-
-
-      if(files.size() != 0){
-        for(int fileIndex=0 ; fileIndex<files.size(); fileIndex++){
-          ReadableMap file = files.getMap(fileIndex);
-          String uri = file.getString("filepath");
-
-          Uri file_uri;
-          if(uri.substring(0,10).equals("content://") ){
-            file_uri = Uri.parse(convertMediaUriToPath(Uri.parse(uri)));
-          }
-          else{
-            file_uri = Uri.parse(uri);
-          }
-
-          File imageFile = new File(file_uri.getPath());
-
-          if(imageFile == null){
-            Log.d(TAG, "FILE NOT FOUND");
-            completeCallback.invoke("FILE NOT FOUND", null);
-              return;
-          }
-
-          String mimeType = "image/png";
-          if(file.hasKey("filetype")){
-            mimeType = file.getString("filetype");
-          }
-          MediaType mediaType = MediaType.parse(mimeType);
-          String fileName = file.getString("filename");
-          String name = fileName;
-          if(file.hasKey("name")){
-            name = file.getString("name");
-          }
-          
-
-          mRequestBody.addFormDataPart(name, fileName, RequestBody.create(mediaType, imageFile));
-        }
-      }
-
-
-
-        MultipartBody requestBody = mRequestBody.build();
-      
-        CountingRequestBody monitoredRequest = new CountingRequestBody(requestBody, new CountingRequestBody.Listener() {
-          @Override
-          public void onRequestProgress(long bytesWritten, long contentLength) {
-            WritableMap params = Arguments.createMap();
-            params.putDouble("progress",100f * bytesWritten / contentLength);
-            params.putDouble("totalBytesWritten", bytesWritten);
-            params.putDouble("totalBytesExpectedToWrite", contentLength);
-
-            reactContext
-                    .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
-                    .emit("RNUploaderProgress", params);
-          }
-        });
-      
-        Request request = new Request.Builder()
-                .header("Accept", "application/json")
-                .url(url)
-                .post(monitoredRequest)
-                .build();
-
-        Response response = client.newCall(request).execute();
-        if (!response.isSuccessful()) {
-            Log.d(TAG, "Unexpected code" + response);
-            completeCallback.invoke(response, null);
-            return;
-        }
-
-        completeCallback.invoke(null, response.body().string());
-    } catch(Exception e) {
-      Log.d(TAG, e.toString());
-    }
-  }
-
-   public String convertMediaUriToPath(Uri uri) {
-    Context context = getReactApplicationContext();
-    String [] proj={MediaStore.Images.Media.DATA};
-    Cursor cursor = context.getContentResolver().query(uri, proj,  null, null, null);
-    int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
-    cursor.moveToFirst();
-    String path = cursor.getString(column_index);
-    cursor.close();
-    return path;
-  }
+public String convertMediaUriToPath(Uri uri) {
+        Context context = getReactApplicationContext();
+        String [] proj={MediaStore.Images.Media.DATA};
+        Cursor cursor = context.getContentResolver().query(uri, proj,  null, null, null);
+        int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+        cursor.moveToFirst();
+        String path = cursor.getString(column_index);
+        cursor.close();
+        return path;
+}
 }
