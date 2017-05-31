@@ -1,14 +1,14 @@
 'use strict';
 
 var { NativeModules } = require('react-native');
-var RNUploader = NativeModules.RNUploader
+var RNUploaderNative = NativeModules.RNUploader
 
 class RNUploader {
   constructor() {
   }
 
   static upload(opts, callback) {
-    RNUploader.upload(opts, callback);
+    RNUploaderNative.upload(opts, callback);
   }
 }
 
