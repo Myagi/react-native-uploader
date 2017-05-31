@@ -1,4 +1,4 @@
-package com.burlap.filetransfer;
+package com.burlap.RNUploader;
 
 import android.app.DownloadManager;
 import android.content.Context;
@@ -42,13 +42,13 @@ import okhttp3.Call;
 
 import com.zhy.http.okhttp.request.CountingRequestBody;
 
-public class FileTransferModule extends ReactContextBaseJavaModule {
+public class RNUploaderModule extends ReactContextBaseJavaModule {
 
 private final OkHttpClient client = new OkHttpClient();
 private String TAG = "ImageUploadAndroid";
 ReactApplicationContext reactContext = null;
 
-public FileTransferModule(ReactApplicationContext reactContext) {
+public RNUploaderModule(ReactApplicationContext reactContext) {
         super(reactContext);
         this.reactContext = reactContext;
 }
@@ -56,7 +56,7 @@ public FileTransferModule(ReactApplicationContext reactContext) {
 @Override
 public String getName() {
         // match up with the IOS name
-        return "FileTransfer";
+        return "RNUploader";
 }
 
 @ReactMethod

@@ -1,4 +1,4 @@
-package com.burlap.filetransfer;
+package com.burlap.RNUploader;
 
 import com.facebook.react.ReactPackage;
 import com.facebook.react.bridge.JavaScriptModule;
@@ -11,13 +11,13 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-public class FileTransferPackage implements ReactPackage {
-  public FileTransferPackage() {}
+public class RNUploaderPackage implements ReactPackage {
+  public RNUploaderPackage() {}
 
   @Override
   public List<NativeModule> createNativeModules(ReactApplicationContext reactContext) {
     return Arrays.<NativeModule>asList(
-        new FileTransferModule(reactContext)
+        new RNUploaderModule(reactContext)
     );
   }
 

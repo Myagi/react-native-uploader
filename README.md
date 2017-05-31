@@ -21,28 +21,28 @@ If you don't want use rnpm, do this
 ### Android
 1. Add to your settings.gradle:
 ```
-include ':RNFileTransfer', ':app'
-project(':RNFileTransfer').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-file-transfer-android/android')
+include ':RNRNUploader', ':app'
+project(':RNRNUploader').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-file-transfer-android/android')
 ```
 
 2. Add to your android/build.gradle:
 ```
 dependencies {
   ...
-  compile project(':RNFileTransfer')
+  compile project(':RNRNUploader')
 }
 ```
 
 3. Add to MainActivity.java
 ```
-import com.burlap.filetransfer.FileTransferPackage;
+import com.burlap.RNUploader.RNUploaderPackage;
 ...
 mReactInstanceManager = ReactInstanceManager.builder()
         .setApplication(getApplication())
         .setBundleAssetName("index.android.bundle")
         .setJSMainModuleName("index.android")
         .addPackage(new MainReactPackage())
-        .addPackage(new FileTransferPackage())
+        .addPackage(new RNUploaderPackage())
 ```
 
 ## Example
