@@ -3,9 +3,10 @@
 #import <MobileCoreServices/MobileCoreServices.h>
 #import <UIKit/UIKit.h>
 
-#import "RCTBridgeModule.h"
-#import "RCTEventDispatcher.h"
-#import "RCTLog.h"
+#import <React/RCTBridgeModule.h>
+#import <React/RCTEventDispatcher.h>
+#import <React/RCTLog.h>
+
 
 @interface RNUploader : NSObject <RCTBridgeModule, NSURLConnectionDelegate, NSURLConnectionDataDelegate>
     @property NSMutableData *responseData;
@@ -145,7 +146,7 @@ RCT_EXPORT_METHOD(upload:(NSDictionary *)obj callback:(RCTResponseSenderBlock)ca
                     Byte *buffer = (Byte*)malloc((NSUInteger)rep.size);
                     NSUInteger buffered = [rep getBytes:buffer fromOffset:0.0 length:(NSUInteger)rep.size error:nil];
                     NSData *data = [NSData dataWithBytesNoCopy:buffer length:buffered freeWhenDone:YES];
-                    
+
                     _file[@"data"] = data;
 
                 }else if([MIMEType rangeOfString:@"image" options:NSRegularExpressionSearch].location != NSNotFound){
