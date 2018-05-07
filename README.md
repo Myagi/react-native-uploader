@@ -6,7 +6,7 @@ You can use file upload with `fetch` and if you want progress bar, you can use x
 
 ## Install
 ### Use rnpm
-1. `npm install react-native-uploader --save`
+1. `npm install "Myagi/react-native-uploader" --save`
 2. `rnpm link react-native-uploader`
 
 
